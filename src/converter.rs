@@ -153,21 +153,21 @@ type SRResault<T> = Result<T, SubReadError>;
 
 trait SubTitleReader: std::iter::Iterator
 {
-    fn new(file: File) -> SubTitleReader;
+    fn new(file: File) -> Self;
     fn set_file(&self, file: File) -> GIOEResult<()>;
     fn read_sub(&self) -> SRResault<()>;
 }
 
 trait SubTitleWriter: std::iter::Iterator
 {
-    fn new(file: File) -> SubTitleWriter;
+    fn new(file: File) -> Self;
     fn set_file(&self, file: File) -> GIOEResult<()>;
     fn write_sub(&self, to_write: &SubTitle) -> GIOEResult<()>;
 }
 
 trait SubTitleReaderWriter: SubTitleReader + SubTitleWriter
 {
-    fn new(Input_file: File, Output_file: File) -> SubTitleReaderWriter;
+    fn new(Input_file: File, Output_file: File) -> Self;
 }
 
 /* THE CONVERTERS THEMSELVES */
