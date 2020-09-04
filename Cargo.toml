@@ -1,5 +1,5 @@
 [package]
-name = "chat_sub_converter"
+name = "SubConverter"
 version = "0.1.0"
 authors = ["sand49"]
 edition = "2018"
