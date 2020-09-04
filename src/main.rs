@@ -1,4 +1,4 @@
-mod converter;
+mod converters;
 
 fn main()
 {

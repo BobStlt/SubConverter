@@ -15,7 +15,9 @@ use std::fs::File;
 
 /* THIS IS THE INTERMIDIATE FORM FOR SUBTITLES */
 
-mod subtitle
+/* This should not be part of the external interface, this should only be used
+ * by implementers of the interface */
+pub(super) mod subtitle
 {
     use std::rc::Rc;
 
@@ -130,64 +132,43 @@ mod subtitle
 
 /* TRAITS FOR CONVERTERS */
 
-use crate::converter::subtitle::{*};
+use super::subtitle_rw_interface::subtitle::{*};
 use std::io;
 
 /* For when we have an issue reading a subtitle file
  * we can determin weather we had an io error or if
  * something else went wrong */
 #[derive(Debug)]
-enum SubReadError
+pub enum SubReadError
 {
     SubTitleError(String),
     IoError(io::Error)
 }
 
 //Generic IO Error Result
-type GIOEResult<T> = Result<T, io::Error>;
+pub type GIOEResult<T> = Result<T, io::Error>;
 
 //SubTitle Reader Result
-type SRResault<T> = Result<T, SubReadError>;
+pub type SRResault<T> = Result<T, SubReadError>;
 
 //Have iterators only return None if we have no file
 
-trait SubTitleReader: std::iter::Iterator
+pub trait SubTitleReader: std::iter::Iterator
 {
     fn new(file: File) -> Self;
     fn set_file(&self, file: File) -> GIOEResult<()>;
     fn read_sub(&self) -> SRResault<()>;
 }
 
-trait SubTitleWriter: std::iter::Iterator
+pub trait SubTitleWriter: std::iter::Iterator
 {
     fn new(file: File) -> Self;
     fn set_file(&self, file: File) -> GIOEResult<()>;
     fn write_sub(&self, to_write: &SubTitle) -> GIOEResult<()>;
 }
 
-trait SubTitleReaderWriter: SubTitleReader + SubTitleWriter
+pub trait SubTitleReaderWriter: SubTitleReader + SubTitleWriter
 {
     fn new(Input_file: File, Output_file: File) -> Self;
 }
 
-/* THE CONVERTERS THEMSELVES */
-/* TODO: Think about moving this to a new file and renaming
- * this file to converter interface */
-
-struct GenericSubtitleReader
-{
-    //TODO
-}
-
-//we can reuse the struct with different impls with aliases
-pub type ColaborateReader = GenericSubtitleReader;
-
-impl std::iter::Iterator for ColaborateReader
-{
-    //TODO
-}
-
-impl SubTitleReader for ColaborateReader
-{
-    //TODO
-}
