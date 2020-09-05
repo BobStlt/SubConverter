@@ -47,7 +47,7 @@ pub(super) mod subtitle
         ///This creates a new SubTitle as an Ok or returns a SubTitleError with what when wrong
         pub fn new_from_strs(start: &str, end: &str, text: &str) -> Result<SubTitle, SubTitleError>
         {
-            /* Times should be in the format xx:xx:xx.xx and the text should not be longer than 80
+            /** Times should be in the format xx:xx:xx.xx and the text should not be longer than 80
              * chars */
 
             //This function check just the time format
@@ -127,6 +127,26 @@ pub(super) mod subtitle
                 Err(SubTitleError::Start(tmp_error_text))
             }
         }
+
+        fn split_time_stamp(stamp: &Rc<String>) -> Vec<&str>
+        {
+            let mut split_stamp = Vec::new();
+
+            let split_time_stamp = (*stamp).split(':').collect::<Vec<&str>>();
+            let sec_mili_split = split_time_stamp[2].split('.').collect::<Vec<&str>>();
+            
+            for i in 0..1
+            {
+                split_stamp.push(split_time_stamp[i]);
+            }
+
+            for section in sec_mili_split
+            {
+                split_stamp.push(section);
+            }
+
+            split_stamp
+        }
     }
 }
 
@@ -156,19 +176,20 @@ pub type SRResault<T> = Result<T, SubReadError>;
 pub trait SubTitleReader: std::iter::Iterator
 {
     fn new(file: File) -> Self;
-    fn set_file(&self, file: File) -> GIOEResult<()>;
+    fn set_file(&self, file: File);
     fn read_sub(&self) -> SRResault<()>;
 }
 
-pub trait SubTitleWriter: std::iter::Iterator
+pub trait SubTitleWriter
 {
     fn new(file: File) -> Self;
-    fn set_file(&self, file: File) -> GIOEResult<()>;
+    fn set_file(&self, file: File);
     fn write_sub(&self, to_write: &SubTitle) -> GIOEResult<()>;
 }
 
 pub trait SubTitleReaderWriter: SubTitleReader + SubTitleWriter
 {
     fn new(Input_file: File, Output_file: File) -> Self;
+    fn set_file(&self, file: File);
 }
 
