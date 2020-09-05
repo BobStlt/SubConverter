@@ -1,3 +1,5 @@
 
 mod subtitle_rw_interface;
-mod subtitle_rw_implementation;
+pub mod subtitle_rw_implementation;
+
+pub use crate::converters::subtitle_rw_implementation as subtitle_rw;
