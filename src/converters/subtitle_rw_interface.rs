@@ -37,9 +37,9 @@ pub(super) mod subtitle
     pub struct SubTitle
     {
         //Thease have all been left read only so users of this can access the fields
-        start: Rc<String>,
-        end: Rc<String>,
-        text: Rc<String>
+        pub start: Rc<String>,
+        pub end: Rc<String>,
+        pub text: Rc<String>
     }
 
     impl SubTitle
@@ -47,7 +47,7 @@ pub(super) mod subtitle
         ///This creates a new SubTitle as an Ok or returns a SubTitleError with what when wrong
         pub fn new_from_strs(start: &str, end: &str, text: &str) -> Result<SubTitle, SubTitleError>
         {
-            /** Times should be in the format xx:xx:xx.xx and the text should not be longer than 80
+            /* Times should be in the format xx:xx:xx.xx and the text should not be longer than 80
              * chars */
 
             //This function check just the time format
@@ -128,7 +128,7 @@ pub(super) mod subtitle
             }
         }
 
-        fn split_time_stamp(stamp: &Rc<String>) -> Vec<&str>
+        pub fn split_time_stamp(stamp: &Rc<String>) -> Vec<&str>
         {
             let mut split_stamp = Vec::new();
 
