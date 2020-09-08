@@ -12,9 +12,9 @@ struct GenericSubtitleReaderWriter
 }
 
 //we can reuse the struct with different impls with aliases
-pub type ColaborateReader = GenericSubtitleReaderWriter;
+pub type WebVttReader = GenericSubtitleReaderWriter;
 
-impl std::iter::Iterator for ColaborateReader
+impl std::iter::Iterator for WebVttReader
 {
     type Item = SubTitle;
 
@@ -24,7 +24,7 @@ impl std::iter::Iterator for ColaborateReader
     }
 }
 
-impl SubTitleReader for ColaborateReader
+impl SubTitleReader for WebVttReader
 {
     fn new(file: File) -> Self
     {
