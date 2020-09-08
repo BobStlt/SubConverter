@@ -81,9 +81,9 @@ impl SubRipWriter
         ret_sub.push(sub_index.to_string());
 
         let mut timestr = String::new();
-        timestr.push_str((*subtitle.start).as_str());
+        timestr.push_str((convert_time_str(&subtitle.start)).as_str());
         timestr.push_str(" --> ");
-        timestr.push_str((*subtitle.end).as_str());
+        timestr.push_str((convert_time_str(&subtitle.end)).as_str());
         ret_sub.push(timestr);
 
         ret_sub.push(*subtitle.text);
