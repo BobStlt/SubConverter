@@ -99,10 +99,10 @@ impl SubTitleWriter for SubRipWriter
         Self
         {
             writer_dat: GenericSubtitleReaderWriter
-                        {
-                            file: file,
-                            subtitles: Vec::new()
-                        },
+                {
+                    file: file,
+                    subtitles: Vec::new()
+                },
             last_written: 0
         }
     }
@@ -115,7 +115,12 @@ impl SubTitleWriter for SubRipWriter
     fn write_sub(&self, to_write: &SubTitle) -> GIOEResult<()>
     {
         let converted_sub = SubRipWriter::convert_to_subrip(to_write, self.last_written + 1);
-        //TODO: write each filed
+
+        for sub_line in converted_sub
+        {
+            self.writer_dat.file.write(sub_line.as_bytes())?;
+            self.writer_dat.file.write(&[b'\n';1])?;
+        }
 
         self.last_written += 1;
         Ok(())
