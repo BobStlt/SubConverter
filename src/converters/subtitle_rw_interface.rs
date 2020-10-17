@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::convert;
 
 /* have a sturct that holds all the data in seperate fields,
  * have this be your generic format.
@@ -26,6 +27,7 @@ pub(super) mod subtitle
     const MAXSUBLENGTH: usize = 80;
 
     ///This is the error type for when parsing a new subtitle fails
+    #[derive(std::fmt::Debug)]
     pub enum SubTitleError
     {
         Start(String),
@@ -165,6 +167,14 @@ pub enum SubReadError
     IoError(io::Error)
 }
 
+impl convert::From<std::io::Error> for SubReadError
+{
+    fn from(error: std::io::Error) -> Self
+    {
+        SubReadError::IoError(error)
+    }
+}
+
 //Generic IO Error Result
 pub type GIOEResult<T> = Result<T, io::Error>;
 
@@ -176,20 +186,20 @@ pub type SRResault<T> = Result<T, SubReadError>;
 pub trait SubTitleReader: std::iter::Iterator
 {
     fn new(file: File) -> Self;
-    fn set_file(&self, file: File);
-    fn read_sub(&self) -> SRResault<()>;
+    fn set_file(&mut self, file: File);
+    fn read_sub(&mut self) -> SRResault<SubTitle>;
 }
 
 pub trait SubTitleWriter
 {
     fn new(file: File) -> Self;
-    fn set_file(&self, file: File);
-    fn write_sub(&self, to_write: &SubTitle) -> GIOEResult<()>;
+    fn set_file(&mut self, file: File);
+    fn write_sub(&mut self, to_write: &SubTitle) -> GIOEResult<()>;
 }
 
 pub trait SubTitleReaderWriter: SubTitleReader + SubTitleWriter
 {
-    fn new(Input_file: File, Output_file: File) -> Self;
-    fn set_file(&self, file: File);
+    fn new(input_file: File, output_file: File) -> Self;
+    fn set_file(&mut self, file: File);
 }
 
