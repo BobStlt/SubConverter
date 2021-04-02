@@ -19,7 +19,9 @@ struct WebVttReader
 
 /**
  * Extracts the webVtt time stamps from the given webVtt line, converting them
- * into the universal time stamp format */
+ * into the universal time stamp format. This ignors any fromatting string after
+ * the duration text*/
+ //TODO: Deside if you want to keep the formatting string for other puposes
 fn collect_timestamps(time_stamp_ln: &str) -> Option<Vec<String>>
 {
     let mut split_stamp_ln: Vec<&str> = time_stamp_ln.split(' ').collect();
@@ -149,6 +151,8 @@ impl SubTitleReader for WebVttReader
                 }
                 
                 //time stamp signiture
+                /* TODO: allow any text after the stamp so we can still detect
+                 * time stamps that have formatting code after */
                 let time_stamp_regex = Regex::new(
                     r"\d{2}:\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}:\d{2}.\d{3}")
                      .unwrap();
@@ -206,6 +210,8 @@ impl SubTitleReader for WebVttReader
                     }
                     else
                     {
+                        /*TODO: this does not take into account any formatting code
+                         * and comments that WEBVTT can contain*/
                         self.valid_file = false;
                         Err(SubReadError::SubTitleError("Could not collect time stamps".to_string()))
                     }
@@ -310,6 +316,7 @@ impl SubTitleWriter for SubRipWriter
 pub fn create_sub_reader(file_name: String) -> Result<Box<dyn SubTitleReader<Item = SubTitle>>, String>
 {
     //The only conversion we support is from webVtt to subrip so
+    //TODO: either add detection logic to the readers or add it here
     Ok(
         Box::new(
             WebVttReader::new(
@@ -327,6 +334,7 @@ pub fn create_sub_reader(file_name: String) -> Result<Box<dyn SubTitleReader<Ite
 pub fn create_sub_writer(file_name: String) -> Result<Box<dyn SubTitleWriter>, String>
 {
     //The only conversion we support is from webVtt to subrip so
+    //TODO: Figure how to know what type of output the user wanted
     Ok(
         Box::new(
             SubRipWriter::new(
