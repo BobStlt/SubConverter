@@ -1,9 +1,14 @@
-use std::{ rc::Rc, io::{BufReader, BufRead, Write}, fs::File, };
-use super::subtitle_rw_interface::{ *, subtitle::{*} };
+use super::subtitle_rw_interface::{subtitle::*, *};
 use regex::Regex;
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, Write},
+    rc::Rc,
+};
 
 /* THE CONVERTERS THEMSELVES */
 
+//TODO: This does not conform to the WEBVTT standard
 /* Remember intermidiate time format is xx:xx:xx.xx */
 
 struct WebVttReader
@@ -13,7 +18,7 @@ struct WebVttReader
      * None */
     valid_file: bool,
     /* if we have read the 'WEBVTT' line at the start of the file */
-    previously_read: bool, 
+    previously_read: bool,
     buf_rd: Box<dyn BufRead>,
 }
 
@@ -21,12 +26,12 @@ struct WebVttReader
  * Extracts the webVtt time stamps from the given webVtt line, converting them
  * into the universal time stamp format. This ignors any fromatting string after
  * the duration text*/
- //TODO: Deside if you want to keep the formatting string for other puposes
+//TODO: Deside if you want to keep the formatting string for other puposes
 fn collect_timestamps(time_stamp_ln: &str) -> Option<Vec<String>>
 {
     let mut split_stamp_ln: Vec<&str> = time_stamp_ln.split(' ').collect();
     let mut ret: Vec<String> = Vec::new();
-   
+
     //deletes the '-->' from our vec leaving us just with the time stamps
     split_stamp_ln.remove(1);
 
@@ -39,7 +44,7 @@ fn collect_timestamps(time_stamp_ln: &str) -> Option<Vec<String>>
             let mut tmp_stamp = String::from(stamp);
             /* if its the "end" time stamp it will also be then end of the
              * time stamp line and thus */
-             tmp_stamp = tmp_stamp.trim().to_string();
+            tmp_stamp = tmp_stamp.trim().to_string();
             //drop the last digit of millis
             tmp_stamp.pop();
             ret.push(tmp_stamp);
@@ -75,8 +80,7 @@ impl SubTitleReader for WebVttReader
     //Self is like a third person self
     fn new(file: File) -> Self
     {
-        WebVttReader
-        {
+        WebVttReader {
             valid_file: false,
             previously_read: false,
             buf_rd: Box::new(BufReader::new(file)),
@@ -109,7 +113,9 @@ impl SubTitleReader for WebVttReader
                 if curr_line.0 != "WEBVTT"
                 {
                     self.valid_file = false;
-                    return Err(SubReadError::SubTitleError("No file WEBVTT tag".to_string()));
+                    return Err(SubReadError::SubTitleError(
+                        "No file WEBVTT tag".to_string(),
+                    ));
                 }
                 else
                 {
@@ -126,12 +132,14 @@ impl SubTitleReader for WebVttReader
                 curr_line.0 = String::new();
                 curr_line.1 = self.buf_rd.read_line(&mut curr_line.0)?;
             }
-            
+
             //if we reach EOF
             if curr_line.1 == 0
             {
                 self.valid_file = false;
-                Err(SubReadError::SubTitleError("There are no subtitles in this file".to_string()))
+                Err(SubReadError::SubTitleError(
+                    "There are no subtitles in this file".to_string(),
+                ))
             }
             else
             {
@@ -149,17 +157,19 @@ impl SubTitleReader for WebVttReader
                     curr_line.0 = String::new();
                     curr_line.1 = self.buf_rd.read_line(&mut curr_line.0)?;
                 }
-                
+
                 //time stamp signiture
                 /* TODO: allow any text after the stamp so we can still detect
                  * time stamps that have formatting code after */
                 let time_stamp_regex = Regex::new(
-                    r"\d{2}:\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}:\d{2}.\d{3}")
-                     .unwrap();
+                    r"\d{2}:\d{2}:\d{2}.\d{3} --> \d{2}:\d{2}:\d{2}.\d{3}",
+                )
+                .unwrap();
                 if time_stamp_regex.is_match(&sub_title_lns[0])
                 {
                     //get the time stamps from the first line
-                    let potential_time_stamps = collect_timestamps(&sub_title_lns[0]);
+                    let potential_time_stamps =
+                        collect_timestamps(&sub_title_lns[0]);
                     if potential_time_stamps.is_some()
                     {
                         let mut time_stamps = potential_time_stamps.unwrap();
@@ -167,7 +177,7 @@ impl SubTitleReader for WebVttReader
                         //Start building the subtitle
                         let mut tmp_sub_data: Vec<String> = Vec::new();
                         //data needs to be in the format { start, end, text }
-                        tmp_sub_data.push(time_stamps.remove(0)); 
+                        tmp_sub_data.push(time_stamps.remove(0));
                         tmp_sub_data.push(time_stamps.remove(0));
 
                         //all the rest of the lines in sub_title_lns are our text lines
@@ -194,7 +204,11 @@ impl SubTitleReader for WebVttReader
                         }
                         tmp_sub_data.push(text);
 
-                        let potential_subtitle = SubTitle::new_from_strs(&tmp_sub_data[0], &tmp_sub_data[1], &tmp_sub_data[2]);
+                        let potential_subtitle = SubTitle::new_from_strs(
+                            &tmp_sub_data[0],
+                            &tmp_sub_data[1],
+                            &tmp_sub_data[2],
+                        );
                         if potential_subtitle.is_ok()
                         {
                             SRResault::Ok(potential_subtitle.unwrap())
@@ -203,7 +217,9 @@ impl SubTitleReader for WebVttReader
                         {
                             let error = potential_subtitle.err().unwrap();
                             let mut errormsg = String::new();
-                            errormsg.push_str("Could not make subtitle from the data");
+                            errormsg.push_str(
+                                "Could not make subtitle from the data",
+                            );
                             errormsg.push_str(&format!("{:?}", error));
                             Err(SubReadError::SubTitleError(errormsg))
                         }
@@ -213,27 +229,27 @@ impl SubTitleReader for WebVttReader
                         /*TODO: this does not take into account any formatting code
                          * and comments that WEBVTT can contain*/
                         self.valid_file = false;
-                        Err(SubReadError::SubTitleError("Could not collect time stamps".to_string()))
+                        Err(SubReadError::SubTitleError(
+                            "Could not collect time stamps".to_string(),
+                        ))
                     }
                 }
                 else
                 {
                     self.valid_file = false;
-                    Err(SubReadError::SubTitleError("Missing time stamp line".to_string()))
+                    Err(SubReadError::SubTitleError(
+                        "Missing time stamp line".to_string(),
+                    ))
                 }
-            
             }
-        
         }
     }
-
-
 }
 
 struct SubRipWriter
 {
     file: File,
-    last_written: i32
+    last_written: i32,
 }
 
 impl SubRipWriter
@@ -241,21 +257,24 @@ impl SubRipWriter
     //Converts a subtitle to a vector of all the strings needed to write a subrip record
     fn convert_to_subrip(subtitle: &SubTitle, sub_index: i32) -> Vec<String>
     {
-        let convert_time_str = |timestr: &Rc<String>| -> String
-        {
+        let convert_time_str = |timestr: &Rc<String>| -> String {
             let mut sub_rip_time = String::new();
             let split_tm_stamp = SubTitle::split_time_stamp(timestr);
             let mut split_tm_stamp_iter = split_tm_stamp.iter();
-        
+
             let errormsg = "SubTitle time stamp in unexpectd format";
 
-            sub_rip_time.push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
+            sub_rip_time
+                .push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
             sub_rip_time.push(':');
-            sub_rip_time.push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
+            sub_rip_time
+                .push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
             sub_rip_time.push(':');
-            sub_rip_time.push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
+            sub_rip_time
+                .push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
             sub_rip_time.push(',');
-            sub_rip_time.push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
+            sub_rip_time
+                .push_str(*(split_tm_stamp_iter.next().expect(errormsg)));
 
             sub_rip_time
         };
@@ -271,7 +290,7 @@ impl SubRipWriter
 
         //This is a clone of the Rc but its being put into a new string so cloning is fine
         ret_sub.push((*subtitle.text).clone());
-        
+
         ret_sub
     }
 }
@@ -280,10 +299,9 @@ impl SubTitleWriter for SubRipWriter
 {
     fn new(file: File) -> Self
     {
-        SubRipWriter
-        {
+        SubRipWriter {
             file: file,
-            last_written: 0
+            last_written: 0,
         }
     }
 
@@ -294,14 +312,15 @@ impl SubTitleWriter for SubRipWriter
 
     fn write_sub(&mut self, to_write: &SubTitle) -> GIOEResult<()>
     {
-        let converted_sub = SubRipWriter::convert_to_subrip(to_write, self.last_written + 1);
+        let converted_sub =
+            SubRipWriter::convert_to_subrip(to_write, self.last_written + 1);
 
         for sub_line in converted_sub
         {
             self.file.write(sub_line.as_bytes())?;
             //write a new line (were just formatting it as an array)
             //be awear that we don't know weather the file was opend in r/w mode
-            self.file.write(&[b'\n';1])?;
+            self.file.write(&[b'\n'; 1])?;
         }
 
         self.last_written += 1;
@@ -313,38 +332,44 @@ impl SubTitleWriter for SubRipWriter
 
 /** This takes a file name and optionally an explicit file type
  * and returns a subtitle reader */
-pub fn create_sub_reader(file_name: String) -> Result<Box<dyn SubTitleReader<Item = SubTitle>>, String>
+pub fn create_sub_reader(
+    file_name: String,
+) -> Result<Box<dyn SubTitleReader<Item = SubTitle>>, String>
 {
     //The only conversion we support is from webVtt to subrip so
     //TODO: either add detection logic to the readers or add it here
-    Ok(
-        Box::new(
-            WebVttReader::new(
-                match File::open(file_name.clone())
-                {
-                    Ok(x) => x,
-                    Err(er) => return Err(format!("Failed to open {} because {:?}",
-                                        file_name, er))
-                }
-            )
-        )
-    )
+    Ok(Box::new(WebVttReader::new(
+        match File::open(file_name.clone())
+        {
+            Ok(x) => x,
+            Err(er) =>
+            {
+                return Err(format!(
+                    "Failed to open {} because {:?}",
+                    file_name, er
+                ))
+            }
+        },
+    )))
 }
 
-pub fn create_sub_writer(file_name: String) -> Result<Box<dyn SubTitleWriter>, String>
+pub fn create_sub_writer(
+    file_name: String,
+) -> Result<Box<dyn SubTitleWriter>, String>
 {
     //The only conversion we support is from webVtt to subrip so
     //TODO: Figure how to know what type of output the user wanted
-    Ok(
-        Box::new(
-            SubRipWriter::new(
-                match File::create(file_name.clone())
-                {
-                    Ok(x) => x,
-                    Err(er) => return Err(format!("Failed to open {} because {:?}",
-                                        file_name, er))
-                }
-            )
-        )
-    )
+    Ok(Box::new(SubRipWriter::new(
+        match File::create(file_name.clone())
+        {
+            Ok(x) => x,
+            Err(er) =>
+            {
+                return Err(format!(
+                    "Failed to open {} because {:?}",
+                    file_name, er
+                ))
+            }
+        },
+    )))
 }

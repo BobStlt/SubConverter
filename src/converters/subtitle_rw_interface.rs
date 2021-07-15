@@ -1,9 +1,9 @@
-use std::fs::File;
 use std::convert;
+use std::fs::File;
 
 /* have a sturct that holds all the data in seperate fields,
  * have this be your generic format.
- * 
+ *
  * make a trate for a 'sub title reader' then make an implementation for
  * a chat comment reader.
  * then have another trate for a 'sub titles writer' that takes a reader
@@ -32,18 +32,18 @@ pub(super) mod subtitle
     {
         Start(String),
         End(String),
-        Text(String)
+        Text(String),
     }
 
     //when we clone the Rc's will keep the refference of the same strings
-    #[derive(Clone, Debug)] 
+    #[derive(Clone, Debug)]
     pub struct SubTitle
     {
         /* Thease have all been left read only so users of this can access the
          * fields */
         pub start: Rc<String>,
         pub end: Rc<String>,
-        pub text: Rc<String>
+        pub text: Rc<String>,
     }
 
     impl SubTitle
@@ -52,96 +52,101 @@ pub(super) mod subtitle
          * This creates a new SubTitle as an Ok or returns a SubTitleError with
          * what when wrong
          */
-        pub fn new_from_strs(start: &str, end: &str, text: &str)
-            -> Result<SubTitle, SubTitleError>
+        pub fn new_from_strs(
+            start: &str,
+            end: &str,
+            text: &str,
+        ) -> Result<SubTitle, SubTitleError>
         {
             /* Times should be in the format xx:xx:xx.xx and the text should
              * not be wider than 80 chars */
 
             //This function check just the time format
-            let valid_time_format =
-                |to_test: &str| -> bool
+            let valid_time_format = |to_test: &str| -> bool {
+                let time_segments: Vec<&str> = to_test.split(":").collect();
+
+                //if we have the correct ammount of segments
+                if time_segments.len() == 3
                 {
-                    let time_segments: Vec<&str> = to_test.split(":").collect();
+                    let sec_segments: Vec<&str> =
+                        time_segments[2].split(".").collect();
 
-                    //if we have the correct ammount of segments
-                    if time_segments.len() == 3
+                    //there should be secconds and millis
+                    if sec_segments.len() == 2
                     {
-                        let sec_segments: Vec<&str> = time_segments[2]
-                                    .split(".")
-                                    .collect();
-
-                        //there should be secconds and millis
-                        if sec_segments.len() == 2
+                        let to_check = vec![
+                            time_segments[0],
+                            time_segments[1],
+                            sec_segments[0],
+                            sec_segments[1],
+                        ];
+                        for item in to_check
                         {
-                            let to_check = vec!{time_segments[0],
-                                                time_segments[1],
-                                                sec_segments[0],
-                                                sec_segments[1]};
-                            for item in to_check
+                            //Check that we have two digits in each section
+                            if item.len() != 2
                             {
-                                //Check that we have two digits in each section
-                                if item.len() !=2 { return false; }
+                                return false;
+                            }
 
-                                /* Check that all the fields contain digits of
-                                 * base 10 */
-                                for carac in item.chars()
+                            /* Check that all the fields contain digits of
+                             * base 10 */
+                            for carac in item.chars()
+                            {
+                                if !carac.is_digit(10)
                                 {
-                                    if !carac.is_digit(10) { return false; }
+                                    return false;
                                 }
                             }
-                            true
-                            
                         }
-                        else
-                        {
-                            false
-                        }
+                        true
                     }
                     else
                     {
                         false
                     }
-                };
+                }
+                else
+                {
+                    false
+                }
+            };
 
             //We test thease sepperately so we know which stage we get up to
             if valid_time_format(start)
             {
                 if valid_time_format(end)
                 {
-
                     /* TODO: change this so it checks weather each line in the
                      * sub title is less than 80 chars */
                     //if text.len() <= MAXSUBLENGTH
                     {
                         //Finally we build our struct and return it
-                        Ok(SubTitle
-                        {
+                        Ok(SubTitle {
                             start: Rc::new(String::from(start)),
                             end: Rc::new(String::from(end)),
-                            text: Rc::new(String::from(text))
+                            text: Rc::new(String::from(text)),
                         })
                     }
-                    /* else
-                    {
-                        let mut  tmp_error_text = String::from(
-                            "This subtitle is too long: ");
-                        tmp_error_text.push_str(text);
-                        Err(SubTitleError::Text(tmp_error_text))
-                    }*/
+                /* else
+                {
+                    let mut  tmp_error_text = String::from(
+                        "This subtitle is too long: ");
+                    tmp_error_text.push_str(text);
+                    Err(SubTitleError::Text(tmp_error_text))
+                }*/
                 }
                 else
                 {
-                    let mut  tmp_error_text = String::from(
-                        "End has invalid time format: ");
+                    let mut tmp_error_text =
+                        String::from("End has invalid time format: ");
                     tmp_error_text.push_str(end);
                     Err(SubTitleError::End(tmp_error_text))
                 }
             }
             else
             {
-                let mut  tmp_error_text = String::from(
-                    "Start has invalid time format: ");
+                let mut tmp_error_text =
+                    String::from("Start has invalid time format: ");
                 tmp_error_text.push_str(start);
                 Err(SubTitleError::Start(tmp_error_text))
             }
@@ -151,13 +156,10 @@ pub(super) mod subtitle
         {
             let mut split_stamp = Vec::new();
 
-            let split_time_stamp = (*stamp)
-                        .split(':')
-                        .collect::<Vec<&str>>();
-            let sec_mili_split = split_time_stamp[2]
-                        .split('.')
-                        .collect::<Vec<&str>>();
-            
+            let split_time_stamp = (*stamp).split(':').collect::<Vec<&str>>();
+            let sec_mili_split =
+                split_time_stamp[2].split('.').collect::<Vec<&str>>();
+
             //2 because the last number is the index we break on
             for i in 0..2
             {
@@ -176,7 +178,7 @@ pub(super) mod subtitle
 
 /* TRAITS FOR CONVERTERS */
 
-use super::subtitle_rw_interface::subtitle::{*};
+use super::subtitle_rw_interface::subtitle::*;
 use std::io;
 
 /* For when we have an issue reading a subtitle file
@@ -186,7 +188,7 @@ use std::io;
 pub enum SubReadError
 {
     SubTitleError(String),
-    IoError(io::Error)
+    IoError(io::Error),
 }
 
 impl convert::From<std::io::Error> for SubReadError
@@ -207,14 +209,18 @@ pub type SRResault<T> = Result<T, SubReadError>;
 
 pub trait SubTitleReader: std::iter::Iterator
 {
-    fn new(file: File) -> Self where Self: Sized;
+    fn new(file: File) -> Self
+    where
+        Self: Sized;
     fn set_file(&mut self, file: File);
     fn read_sub(&mut self) -> SRResault<SubTitle>;
 }
 
 pub trait SubTitleWriter
 {
-    fn new(file: File) -> Self where Self: Sized;
+    fn new(file: File) -> Self
+    where
+        Self: Sized;
     fn set_file(&mut self, file: File);
     fn write_sub(&mut self, to_write: &SubTitle) -> GIOEResult<()>;
 }
@@ -224,4 +230,3 @@ pub trait SubTitleWriter
     fn new(input_file: File, output_file: File) -> Self where Self: Sized;
     fn set_file(&mut self, file: File);
 } */
-
